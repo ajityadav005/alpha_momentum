@@ -209,6 +209,10 @@ risk_free_file = st.sidebar.file_uploader(
     "Upload Risk-Free Rate CSV",
     type=['csv']
 )
+run_strategy = st.sidebar.button(
+    "Get Momentum Portfolio"
+)
+
 if risk_free_file is not None:
 
     validate_risk_free_file(
@@ -225,9 +229,7 @@ if nse_file is None or risk_free_file is None:
 
     st.stop()
 
-run_strategy = st.sidebar.button(
-    "Get Momentum Portfolio"
-)
+
 # ═══════════════════════════════════════════════════════
 # DOWNLOAD HELPERS
 # ═══════════════════════════════════════════════════════
@@ -324,7 +326,7 @@ def calculate_alpha(df, start_date, end_date, market_rf):
 
         stock = stock_returns[[st_sym]].dropna()
 
-        if len(stock) < 30:
+        if len(stock) < 2:
             continue
 
         try:
@@ -386,6 +388,8 @@ def run_engine(lookback_months , analysis_date):
     data_list['Symbol'] = data_list['Symbol'] + '.NS'
 
     symbols = list(data_list['Symbol'])
+    initial_universe = len(symbols)
+
 
     # Download data
 
@@ -400,6 +404,7 @@ def run_engine(lookback_months , analysis_date):
         for k, v in nse_500_data.items()
         if not v.empty
     }
+    stocks_with_data = len(successful)
 
     if len(successful) < 10:
 
@@ -492,6 +497,7 @@ def run_engine(lookback_months , analysis_date):
         end_date,
         market_rf
     )
+    stocks_alpha_calculated = len(sorted_df)
 
     # One-month filter
 
@@ -530,17 +536,25 @@ def run_engine(lookback_months , analysis_date):
     updated_sorted_df = sorted_df.loc[
         ~sorted_df.index.isin(bad_stocks)
     ]
+    stocks_after_filter = len(updated_sorted_df)
+
 
     updated_sorted_df = updated_sorted_df[
         updated_sorted_df['Alpha'] > 0
     ].copy()
+    stocks_positive_alpha = len(updated_sorted_df)
 
     return (
-        updated_sorted_df,
-        sorted_df,
-        one_month_ret_series,
-        data_list,
-        date_str
+    updated_sorted_df,
+    sorted_df,
+    one_month_ret_series,
+    data_list,
+    date_str,
+    initial_universe,
+    stocks_with_data,
+    stocks_alpha_calculated,
+    stocks_positive_alpha,
+    stocks_after_filter
     )
 
 # ═══════════════════════════════════════════════════════
@@ -551,29 +565,79 @@ if run_strategy:
     with st.spinner("Running momentum engine..."):
 
         (
-            updated_sorted_df,
-            sorted_df,
-            one_month_ret_series,
-            data_list,
-            date_str
+    updated_sorted_df,
+    sorted_df,
+    one_month_ret_series,
+    data_list,
+    date_str,
+    initial_universe,
+    stocks_with_data,
+    stocks_alpha_calculated,
+    stocks_positive_alpha,
+    stocks_after_filter
         ) = run_engine(
             lookback_months ,
             analysis_date
         )
+
+if not run_strategy:
+
+    st.info(
+        "Select parameters and click 'Get Momentum Portfolio'."
+    )
+
+    st.stop()
 # ═══════════════════════════════════════════════════════
 # METRICS
 # ═══════════════════════════════════════════════════════
 
-c1, c2 = st.columns(2)
+c1, c2, c3 = st.columns(3)
 
-c1.metric("Date", date_str)
+c1.metric(
+    "Portfolio Date",
+    date_str
+)
 
 c2.metric(
-    "Stocks After Filter",
-    len(updated_sorted_df)
+    "Lookback",
+    f"{lookback_months} Month"
+)
+
+c3.metric(
+    "Final Stocks",
+    stocks_positive_alpha
 )
 
 st.divider()
+
+c1, c2, c3, c4, c5 = st.columns(5)
+
+c1.metric(
+    "Initial Universe",
+    initial_universe
+)
+
+c2.metric(
+    "Data Available",
+    stocks_with_data
+)
+
+c3.metric(
+    "Alpha Calculated",
+    stocks_alpha_calculated
+)
+
+c4.metric(
+    "1M Return > -5%",
+    stocks_after_filter
+)
+
+c5.metric(
+    "Positive Alpha",
+    stocks_positive_alpha
+)
+
+
 
 # ═══════════════════════════════════════════════════════
 # PORTFOLIO SIZE
@@ -585,7 +649,7 @@ portfolio_size = st.number_input(
     "Enter Portfolio Size",
     min_value=1,
     max_value=max_portfolio_size,
-    value=min(25, max_portfolio_size),
+    value=min(10, max_portfolio_size),
     step=1
 )
 
