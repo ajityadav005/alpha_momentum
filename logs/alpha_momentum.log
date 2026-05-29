@@ -1,0 +1,31 @@
+2026-05-25 11:56:54 | INFO     | ============================================================
+2026-05-25 11:56:54 | INFO     | Streamlit run started — portfolio size: 10
+2026-05-25 11:56:54 | INFO     | Date range: 2025-05-25 → 2026-05-25
+2026-05-25 11:56:55 | INFO     | Universe: 504 symbols
+2026-05-25 11:57:33 | INFO     | Downloaded: 500 ok / 4 failed
+2026-05-25 11:57:51 | INFO     | Alpha table: 500 stocks
+2026-05-25 11:57:51 | INFO     | Portfolio built: 10 stocks as of 2026-05-25
+2026-05-25 12:42:59 | INFO     | ============================================================
+2026-05-25 12:42:59 | INFO     | Streamlit run started — portfolio size: 10
+2026-05-25 12:42:59 | INFO     | Date range: 2025-05-25 → 2026-05-25
+2026-05-25 12:42:59 | INFO     | Universe: 504 symbols
+2026-05-25 12:43:43 | INFO     | Downloaded: 500 ok / 4 failed
+2026-05-25 12:43:55 | INFO     | Alpha table: 500 stocks
+2026-05-25 12:43:55 | INFO     | Portfolio built: 10 stocks as of 2026-05-25
+2026-05-25 12:44:31 | INFO     | ============================================================
+2026-05-25 12:44:31 | INFO     | Streamlit run started — portfolio size: 25
+2026-05-25 12:44:31 | INFO     | Date range: 2025-05-25 → 2026-05-25
+2026-05-25 12:44:31 | INFO     | Universe: 504 symbols
+2026-05-25 12:45:17 | INFO     | Downloaded: 500 ok / 4 failed
+2026-05-25 12:45:28 | INFO     | Alpha table: 500 stocks
+2026-05-25 12:45:28 | INFO     | Portfolio built: 25 stocks as of 2026-05-25
+2026-05-25 12:50:11 | INFO     | Engine started
+2026-05-25 12:50:11 | INFO     | Universe: 504 symbols
+2026-05-25 12:50:55 | INFO     | Downloaded 500 ok / 4 failed in 44.0s
+2026-05-25 12:51:06 | INFO     | Regressions done: 500 stocks ranked
+2026-05-25 12:51:06 | INFO     | Engine complete. 395 stocks in filtered universe.
+2026-05-25 12:54:05 | INFO     | Engine started
+2026-05-25 12:54:05 | INFO     | Universe: 504 symbols
+2026-05-25 12:54:30 | INFO     | Downloaded 500 ok / 4 failed in 24.7s
+2026-05-25 12:54:36 | INFO     | Regressions done: 500 stocks ranked
+2026-05-25 12:54:36 | INFO     | Engine complete. 243 stocks in filtered universe.
