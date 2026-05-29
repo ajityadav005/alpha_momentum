@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 def validate_risk_free_file(
     risk_free_file,
     analysis_date,
-    lookback_years
+    lookback_months
 ):
 
     try:
@@ -46,7 +46,7 @@ def validate_risk_free_file(
 
         required_start = (
             pd.Timestamp(analysis_date)
-            - pd.DateOffset(years=lookback_years)
+            - pd.DateOffset(months=lookback_months)
         )
 
         required_end = pd.Timestamp(analysis_date)
@@ -90,8 +90,8 @@ st.set_page_config(
     page_icon="📈",
     layout="wide"
 )
-lookback_years = st.sidebar.number_input(
-    "Lookback Period (Years)",
+lookback_months  = st.sidebar.number_input(
+    "Lookback Period (Months)",
     min_value=1,
     max_value=60,
     value=1,
@@ -108,7 +108,7 @@ analysis_date = st.sidebar.date_input(
 st.title("📈 Alpha Momentum Portfolio")
 st.caption(
     f"NSE 500 · CAPM Alpha Momentum Strategy "
-    f"With {lookback_years}-Year Look-back Period"
+    f"With {lookback_months}-Month Look-back Period"
 )
 
 # ═══════════════════════════════════════════════════════
@@ -214,7 +214,7 @@ if risk_free_file is not None:
     validate_risk_free_file(
         risk_free_file,
         analysis_date,
-        lookback_years
+        lookback_months
     )
 
 if nse_file is None or risk_free_file is None:
@@ -369,11 +369,11 @@ def calculate_alpha(df, start_date, end_date, market_rf):
 
 @st.cache_data(ttl=86400)
 
-def run_engine(lookback_years , analysis_date):
+def run_engine(lookback_months , analysis_date):
 
     today = analysis_date
 
-    start_date = pd.Timestamp(today) - pd.DateOffset(years=lookback_years)
+    start_date = pd.Timestamp(today) - pd.DateOffset(months=lookback_months)
 
     end_date = pd.Timestamp(today)
 
@@ -554,7 +554,7 @@ with st.spinner("Running momentum engine..."):
         data_list,
         date_str
     ) = run_engine(
-        lookback_years,
+        lookback_months,
         analysis_date
     )
 # ═══════════════════════════════════════════════════════
