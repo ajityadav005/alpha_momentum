@@ -10,30 +10,212 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # ═══════════════════════════════════════════════════════
 # PAGE CONFIG
 # ═══════════════════════════════════════════════════════
+def validate_risk_free_file(
+    risk_free_file,
+    analysis_date,
+    lookback_years
+):
+
+    try:
+
+        rf_check = pd.read_csv(risk_free_file)
+
+        required_cols = ['Date', 'Price']
+
+        missing_cols = [
+            col
+            for col in required_cols
+            if col not in rf_check.columns
+        ]
+
+        if missing_cols:
+
+            st.sidebar.error(
+                f"Risk-Free file is missing required column(s): "
+                f"{', '.join(missing_cols)}"
+            )
+            st.stop()
+
+        rf_check['Date'] = pd.to_datetime(
+            rf_check['Date'],
+            format="%d-%m-%Y"
+        )
+
+        rf_start = rf_check['Date'].min()
+        rf_end = rf_check['Date'].max()
+
+        required_start = (
+            pd.Timestamp(analysis_date)
+            - pd.DateOffset(years=lookback_years)
+        )
+
+        required_end = pd.Timestamp(analysis_date)
+
+        if rf_start > required_start + pd.Timedelta(days=5):
+
+            st.sidebar.error(
+                f"Risk-free data must start on or before "
+                f"{required_start.date()}.\n\n"
+                f"Uploaded file starts on "
+                f"{rf_start.date()}."
+            )
+
+            st.stop()
+
+        if rf_end < required_end - pd.Timedelta(days=5):
+
+            st.sidebar.error(
+                f"Risk-free data must extend until "
+                f"{required_end.date()}.\n\n"
+                f"Uploaded file ends on "
+                f"{rf_end.date()}."
+            )
+
+            st.stop()
+
+        risk_free_file.seek(0)
+
+        return True
+
+    except Exception as e:
+
+        st.sidebar.error(
+            f"Invalid Risk-Free file: {str(e)}"
+        )
+
+        st.stop()
 
 st.set_page_config(
     page_title="Alpha Momentum Portfolio",
     page_icon="📈",
     layout="wide"
 )
+lookback_years = st.sidebar.number_input(
+    "Lookback Period (Years)",
+    min_value=1,
+    max_value=60,
+    value=1,
+    step=1
+)
+
+analysis_date = st.sidebar.date_input(
+    "Portfolio Date",
+    value=date.today(),
+    max_value=date.today(),
+    help="Select the date for which alpha rankings should be calculated."
+)
 
 st.title("📈 Alpha Momentum Portfolio")
-st.caption("NSE 500 · CAPM Alpha Momentum Strategy With 12-Month Look-back Period")
+st.caption(
+    f"NSE 500 · CAPM Alpha Momentum Strategy "
+    f"With {lookback_years}-Year Look-back Period"
+)
 
 # ═══════════════════════════════════════════════════════
 # CONFIG
 # ═══════════════════════════════════════════════════════
 st.sidebar.header("Upload Required Files")
 
+
+with st.sidebar.expander("📄 View Required File Format"):
+
+    st.write("NSE Constituents File")
+
+    st.dataframe(
+        pd.DataFrame({
+            "Symbol": ["RELIANCE", "TCS", "INFY"],
+            "Company Name": [
+                "Reliance Industries",
+                "Tata Consultancy Services",
+                "Infosys"
+            ]
+        }),
+        hide_index=True
+    )
+
+    st.write("Risk-Free Rate File")
+
+    st.dataframe(
+        pd.DataFrame({
+            "Date": [
+                "31-05-2025",
+                "01-06-2025",
+                "02-06-2025"
+            ],
+            "Price": [6.75, 6.74, 6.73]
+        }),
+        hide_index=True
+    )
+
+    st.caption(
+        "Risk-free file must contain Date and Price columns, "
+        "use DD-MM-YYYY format, and cover at least the last 12 months."
+    )
+
 nse_file = st.sidebar.file_uploader(
     "Upload NSE Constituents CSV",
     type=['csv']
 )
 
+if nse_file is not None:
+
+    try:
+
+        nse_check = pd.read_csv(nse_file)
+
+        required_cols = ['Symbol']
+
+        missing_cols = [
+            col
+            for col in required_cols
+            if col not in nse_check.columns
+        ]
+
+        if missing_cols:
+
+            st.sidebar.error(
+                f"Missing required column(s): "
+                f"{', '.join(missing_cols)}"
+            )
+            st.stop()
+
+        if nse_check.empty:
+
+            st.sidebar.error(
+                "NSE file contains no data."
+            )
+            st.stop()
+
+        if nse_check['Symbol'].isna().all():
+
+            st.sidebar.error(
+                "Symbol column is empty."
+            )
+            st.stop()
+
+        nse_file.seek(0)
+
+    except Exception as e:
+
+        st.sidebar.error(
+            f"Invalid NSE file: {str(e)}"
+        )
+        st.stop()
+
+
+
+
 risk_free_file = st.sidebar.file_uploader(
     "Upload Risk-Free Rate CSV",
     type=['csv']
 )
+if risk_free_file is not None:
+
+    validate_risk_free_file(
+        risk_free_file,
+        analysis_date,
+        lookback_years
+    )
 
 if nse_file is None or risk_free_file is None:
 
@@ -42,6 +224,7 @@ if nse_file is None or risk_free_file is None:
     )
 
     st.stop()
+
 
 # ═══════════════════════════════════════════════════════
 # DOWNLOAD HELPERS
@@ -186,11 +369,11 @@ def calculate_alpha(df, start_date, end_date, market_rf):
 
 @st.cache_data(ttl=86400)
 
-def run_engine():
+def run_engine(lookback_years , analysis_date):
 
-    today = date.today()
+    today = analysis_date
 
-    start_date = pd.Timestamp(today) - pd.DateOffset(years=1)
+    start_date = pd.Timestamp(today) - pd.DateOffset(years=lookback_years)
 
     end_date = pd.Timestamp(today)
 
@@ -297,7 +480,7 @@ def run_engine():
 
     )
 
-    market_rf = market_rf.ffill()
+    market_rf = market_rf.ffill().bfill()
 
     # Alpha
 
@@ -362,20 +545,18 @@ def run_engine():
 # ENGINE EXECUTION
 # ═══════════════════════════════════════════════════════
 
-if 'engine_data' not in st.session_state:
+with st.spinner("Running momentum engine..."):
 
-    with st.spinner("Running momentum engine..."):
-
-        st.session_state.engine_data = run_engine()
-
-(
-    updated_sorted_df,
-    sorted_df,
-    one_month_ret_series,
-    data_list,
-    date_str
-) = st.session_state.engine_data
-
+    (
+        updated_sorted_df,
+        sorted_df,
+        one_month_ret_series,
+        data_list,
+        date_str
+    ) = run_engine(
+        lookback_years,
+        analysis_date
+    )
 # ═══════════════════════════════════════════════════════
 # METRICS
 # ═══════════════════════════════════════════════════════
@@ -517,9 +698,5 @@ st.download_button(
 if st.button("🔄 Refresh Data"):
 
     st.cache_data.clear()
-
-    if 'engine_data' in st.session_state:
-
-        del st.session_state.engine_data
 
     st.rerun()
