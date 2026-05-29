@@ -225,7 +225,9 @@ if nse_file is None or risk_free_file is None:
 
     st.stop()
 
-
+run_strategy = st.sidebar.button(
+    "Get Momentum Portfolio"
+)
 # ═══════════════════════════════════════════════════════
 # DOWNLOAD HELPERS
 # ═══════════════════════════════════════════════════════
@@ -544,19 +546,20 @@ def run_engine(lookback_months , analysis_date):
 # ═══════════════════════════════════════════════════════
 # ENGINE EXECUTION
 # ═══════════════════════════════════════════════════════
+if run_strategy:
 
-with st.spinner("Running momentum engine..."):
+    with st.spinner("Running momentum engine..."):
 
-    (
-        updated_sorted_df,
-        sorted_df,
-        one_month_ret_series,
-        data_list,
-        date_str
-    ) = run_engine(
-        lookback_months,
-        analysis_date
-    )
+        (
+            updated_sorted_df,
+            sorted_df,
+            one_month_ret_series,
+            data_list,
+            date_str
+        ) = run_engine(
+            lookback_months ,
+            analysis_date
+        )
 # ═══════════════════════════════════════════════════════
 # METRICS
 # ═══════════════════════════════════════════════════════
